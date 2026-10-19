@@ -9,6 +9,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,6 +19,8 @@ jobs:
           java-version: '17'
 
       - uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
 
       - name: Extract source ZIP
         run: |
@@ -29,12 +32,20 @@ jobs:
 
       - name: Build APK
         run: |
-          cd source/WaEnhancer-1.6.1-legacy-port
+          GRADLEW=$(find source -name gradlew -type f | head -n 1)
+          if [ -z "$GRADLEW" ]; then
+            echo "ERROR: Gradle wrapper not found"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$GRADLEW")
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew --no-daemon assembleDebug
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: WAEnhancer-APK
           path: source/**/*.apk
+          if-no-files-found: warn
