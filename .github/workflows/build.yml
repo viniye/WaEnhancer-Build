@@ -1,0 +1,40 @@
+name: Build WAEnhancer APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Extract source ZIP
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip
+          mkdir source
+          unzip -q *.zip -d source
+          find source -name gradlew -type f
+
+      - name: Build APK
+        run: |
+          cd source/WaEnhancer-1.6.1-legacy-port
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: WAEnhancer-APK
+          path: source/**/*.apk
